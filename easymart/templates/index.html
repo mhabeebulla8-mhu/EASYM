@@ -398,7 +398,7 @@
                         {% if offer.image %}
                             <img src="{{ offer.image.url }}" loading="lazy" alt="{{ offer.title }}">
                         {% else %}
-                            <img src="{% static 'offers/default.png' %}" loading="lazy">
+                            <img src="{% static 'images/bg.jpeg' %}" loading="lazy">
                         {% endif %}
 
                         <div class="hero-overlay">
@@ -415,7 +415,7 @@
         {% else %}
 
             <div class="carousel-slide">
-                <img src="{% static 'offers/default.png' %}" loading="lazy">
+                <img src="{% static 'images/bg.jpeg' %}" loading="lazy">
             </div>
 
         {% endif %}
