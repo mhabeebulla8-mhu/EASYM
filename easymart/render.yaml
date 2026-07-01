@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: easymart
+    env: python
+    buildCommand: "bash build.sh"
+    startCommand: "gunicorn easymart.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
