@@ -189,7 +189,7 @@ class Product(models.Model):
         
         mapping = {
             "apple": "apple.jpg",
-            "banana": "bananna.jpg",
+            "banana": "banana.jpg",
             "mango": "mango.jpg",
             "orange": "orange.jpg",
             "carrot": "carrot.jpg",
@@ -202,12 +202,12 @@ class Product(models.Model):
             "curd": "curd.jpg",
             "bread": "bread.jpg",
             "cake": "cake.jpg",
-            "bun": "Bun.jpg",
+            "bun": "bun.jpg",
             "croissant": "croissant.jpg",
             "orange juice": "juice.jpg",
             "tea": "tea.jpg",
             "coffee": "coffee.jpg",
-            "cold drink": "cold drink.jpg",
+            "cold drink": "cold_drink.jpg",
             "chips": "chips.jpg",
             "biscuits": "biscuit.jpg",
             "namkeen": "namkeen.jpg",
