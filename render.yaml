@@ -2,6 +2,7 @@ services:
   - type: web
     name: easymart
     env: python
+    rootDir: easymart
     buildCommand: "bash build.sh"
     startCommand: "gunicorn easymart.wsgi:application"
     envVars:
