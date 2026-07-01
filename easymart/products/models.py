@@ -185,7 +185,37 @@ class Product(models.Model):
         if self.image:
             return self.image.url
 
-        return "/static/images/default.png"
+        name_lower = self.name.lower()
+        
+        mapping = {
+            "apple": "apple.jpg",
+            "banana": "bananna.jpg",
+            "mango": "mango.jpg",
+            "orange": "orange.jpg",
+            "carrot": "carrot.jpg",
+            "tomato": "tomato.jpg",
+            "onion": "onion.jpg",
+            "potato": "potato.jpg",
+            "milk": "milk.jpg",
+            "butter": "butter.jpg",
+            "cheese": "cheese.jpg",
+            "curd": "curd.jpg",
+            "bread": "bread.jpg",
+            "cake": "cake.jpg",
+            "bun": "Bun.jpg",
+            "croissant": "croissant.jpg",
+            "orange juice": "juice.jpg",
+            "tea": "tea.jpg",
+            "coffee": "coffee.jpg",
+            "cold drink": "cold drink.jpg",
+            "chips": "chips.jpg",
+            "biscuits": "biscuit.jpg",
+            "namkeen": "namkeen.jpg",
+            "popcorn": "popcorn.jpg"
+        }
+        
+        filename = mapping.get(name_lower, "default.png")
+        return f"/static/images/{filename}"
 
     # ==================================================
     # DISCOUNT AMOUNT
