@@ -167,6 +167,13 @@ def user_login(request):
 
             messages.success(request, "Login successful")
 
+            next_url = request.POST.get('next') or request.GET.get('next')
+            if next_url:
+                return redirect(next_url)
+
+            if user.is_staff or user.is_superuser:
+                return redirect('/admin/')
+
             return redirect('products:home')
 
         messages.error(request, "Invalid credentials")
@@ -218,9 +225,10 @@ def api_login(request):
         if user:
             login(request, user)
 
+            redirect_url = '/admin/' if user.is_staff or user.is_superuser else '/products/home/'
             return JsonResponse({
                 'success': True,
-                'redirect': '/products/home/'
+                'redirect': redirect_url
             })
 
         return JsonResponse(
@@ -275,9 +283,10 @@ def otp_login(request):
 
         login(request, user_obj)
 
+        redirect_url = '/admin/' if user_obj.is_staff or user_obj.is_superuser else '/products/home/'
         return JsonResponse({
             'success': True,
-            'redirect': '/products/home/'
+            'redirect': redirect_url
         })
 
     except Exception as e:

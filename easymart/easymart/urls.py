@@ -2,12 +2,16 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 
 from products import views as product_views
 
 
 urlpatterns = [
 
+    # 🔐 Admin Redirect
+    path('admin/login/', RedirectView.as_view(pattern_name='accounts:login', query_string=True)),
+    
     # 🔐 Admin
     path('admin/', admin.site.urls),
 

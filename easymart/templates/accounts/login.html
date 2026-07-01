@@ -106,6 +106,9 @@
     <!-- ✅ FORM (IMPORTANT FIX) -->
     <form method="POST" action="{% url 'accounts:login' %}">
         {% csrf_token %}
+        {% if request.GET.next %}
+            <input type="hidden" name="next" value="{{ request.GET.next }}">
+        {% endif %}
 
         <!-- EMAIL -->
         <input id="email" name="email" type="email" class="form-control mb-2" placeholder="Enter your Email" required>
