@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EasyMart - Create Account</title>
+
+    {% load static %}
+
+    <!-- CSRF -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Toast Notifications -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.css">
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            font-family: 'Poppins', sans-serif;
+            background: url("{% static 'images/bg.jpeg' %}") no-repeat center/cover;
+        }
+
+        .wrapper {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(to right, rgba(0,0,0,0.6), rgba(0,0,0,0.4));
+        }
+
+        .login-card {
+            width: 430px;
+            padding: 35px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(25px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            color: white;
+        }
+
+        .brand {
+            font-size: 28px;
+            text-align: center;
+            color: #ffc107;
+            font-weight: 600;
+        }
+
+        .tagline {
+            font-size: 13px;
+            text-align: center;
+            color: #ddd;
+            margin-bottom: 18px;
+        }
+
+        .form-control {
+            border-radius: 12px;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .form-control::placeholder {
+            color: rgba(255,255,255,0.6);
+        }
+
+        .form-control:focus {
+            background: rgba(255,255,255,0.15);
+            border-color: #ffc107;
+            color: white;
+            box-shadow: none;
+        }
+
+        .btn-login {
+            background: #2e7d32;
+            color: white;
+            border-radius: 25px;
+            font-weight: 500;
+        }
+
+        .btn-login:hover {
+            background: #1b5e20;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+            border-radius: 25px;
+            font-weight: 500;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .step-indicator {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 12px;
+            color: #ddd;
+        }
+
+        .step-title {
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .otp-input-group {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            max-width: 360px;
+            margin: 15px auto;
+        }
+
+        .otp-input {
+            width: 52px;
+            min-width: 52px;
+            height: 50px;
+            text-align: center;
+            font-size: 24px;
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-weight: 600;
+        }
+
+        .otp-input:focus {
+            border-color: #ffc107;
+            outline: none;
+            background: rgba(255,255,255,0.2);
+        }
+
+        .timer {
+            text-align: center;
+            color: #ff6b6b;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 15px;
+            color: #ddd;
+        }
+
+        .login-link a {
+            color: #ffc107;
+            text-decoration: none;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .btn-group-horizontal {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-group-horizontal button {
+            flex: 1;
+        }
+
+        .input-group .input-group-text {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            cursor: pointer;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="wrapper">
+<div class="login-card">
+
+    <div class="brand">
+        <i class="bi bi-basket2-fill"></i> EasyMart
+    </div>
+
+    <div class="tagline">Fast signup with secure OTP verification</div>
+
+    <!-- STEP 1: EMAIL & PASSWORD -->
+    <div id="step1" class="step-container">
+        <div class="step-indicator">Step 1 of 2</div>
+        <h5 class="text-center step-title mb-3">Create your account</h5>
+
+        <input id="email" type="email" class="form-control mb-2" placeholder="Enter your Email" required>
+
+        <div class="input-group mb-2">
+            <input id="password" type="password" class="form-control" placeholder="Password (min 6 characters)" required>
+            <span class="input-group-text" onclick="togglePassword()">
+                <i class="bi bi-eye"></i>
+            </span>
+        </div>
+
+        <div class="input-group mb-3">
+            <input id="confirm_password" type="password" class="form-control" placeholder="Confirm Password" required>
+            <span class="input-group-text" onclick="toggleConfirmPassword()">
+                <i class="bi bi-eye"></i>
+            </span>
+        </div>
+
+        <button id="sendOtpBtn" onclick="sendOTP(event)" class="btn btn-login w-100">Send OTP to Email</button>
+
+        <div class="login-link">
+            Already have an account? <a href="{% url 'accounts:login' %}">Login here</a>
+        </div>
+    </div>
+
+    <!-- STEP 2: OTP VERIFICATION -->
+    <div id="step2" class="step-container hidden">
+        <div class="step-indicator">Step 2 of 2</div>
+        <h5 class="text-center step-title mb-3">Verify OTP</h5>
+
+        <p style="text-align: center; font-size: 13px; color: #ddd; margin-bottom: 15px;">
+            We've sent a 6-digit OTP to<br><strong id="display-email"></strong>
+        </p>
+
+        <div class="otp-input-group" id="otpGroup">
+            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-pos="0">
+            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-pos="1">
+            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-pos="2">
+            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-pos="3">
+            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-pos="4">
+            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" data-pos="5">
+        </div>
+
+        <div class="timer" id="timer"></div>
+
+        <button id="verifyOtpBtn" onclick="verifyOTP(event)" class="btn btn-login w-100 mb-2">Verify OTP & Create Account</button>
+
+        <div class="btn-group-horizontal">
+            <button id="resendOtpBtn" onclick="resendOTP(event)" class="btn btn-secondary">Resend OTP</button>
+            <button onclick="goBack()" class="btn btn-outline-secondary" style="color: white; border-color: white;">Back</button>
+        </div>
+
+        <div class="login-link">
+            <a href="{% url 'accounts:login' %}">Back to Login</a>
+        </div>
+    </div>
+
+</div>
+</div>
+
+<!-- Toast Notification -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.js"></script>
+
+<script>
+    // Toastr Configuration
+    toastr.options = {
+        "closeButton": true,
+        "debug": false,
+        "newestOnTop": false,
+        "progressBar": true,
+        "positionClass": "toast-top-right",
+        "preventDuplicates": false,
+        "onclick": null,
+        "showDuration": "300",
+        "hideDuration": "1000",
+        "timeOut": "4000",
+        "extendedTimeOut": "1000",
+        "showEasing": "swing",
+        "hideEasing": "linear",
+        "showMethod": "fadeIn",
+        "hideMethod": "fadeOut"
+    };
+
+    let otpTimer = 0;
+
+    function togglePassword() {
+        const input = document.getElementById('password');
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    function toggleConfirmPassword() {
+        const input = document.getElementById('confirm_password');
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    function getCSRFToken() {
+        // Try to get from meta tag first
+        const metaToken = document.querySelector('meta[name="csrf-token"]');
+        if (metaToken) {
+            return metaToken.getAttribute('content');
+        }
+        // Fallback to cookie
+        return document.cookie.split('; ')
+            .find(row => row.startsWith('csrftoken'))
+            ?.split('=')[1];
+    }
+
+    function sendOTP(event) {
+        const btn = event?.currentTarget || document.getElementById('sendOtpBtn');
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const confirmPassword = document.getElementById('confirm_password').value.trim();
+
+        if (!email) {
+            toastr.error('Email is required');
+            return;
+        }
+
+        if (!email.includes('@')) {
+            toastr.error('Please enter a valid email');
+            return;
+        }
+
+        if (!password) {
+            toastr.error('Password is required');
+            return;
+        }
+
+        if (password.length < 6) {
+            toastr.error('Password must be at least 6 characters');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            toastr.error('Passwords do not match');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = 'Sending OTP...';
+
+        fetch('{% url "accounts:send_otp" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({ email: email, purpose: 'signup' })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                toastr.success('✅ OTP sent to your email!');
+                document.getElementById('display-email').innerText = email;
+                document.getElementById('step1').classList.add('hidden');
+                document.getElementById('step2').classList.remove('hidden');
+                startOTPTimer();
+                focusFirstOTPInput();
+            } else {
+                toastr.error('❌ ' + (data.error || data.message || 'Failed to send OTP'));
+            }
+        })
+        .catch(err => {
+            toastr.error('❌ Error: ' + err.message);
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerText = 'Send OTP to Email';
+        });
+    }
+
+    function startOTPTimer() {
+        otpTimer = 120; // 2 minutes
+        updateTimer();
+    }
+
+    function updateTimer() {
+        const timerEl = document.getElementById('timer');
+        if (otpTimer > 0) {
+            const minutes = Math.floor(otpTimer / 60);
+            const seconds = otpTimer % 60;
+            timerEl.innerText = `⏱️ OTP expires in ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            otpTimer--;
+            setTimeout(updateTimer, 1000);
+        } else {
+            timerEl.innerText = '⏰ OTP Expired. Click Resend';
+        }
+    }
+
+    function focusFirstOTPInput() {
+        document.querySelector('.otp-input').focus();
+    }
+
+    // OTP Input Auto-Tab
+    document.querySelectorAll('.otp-input').forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+            if (e.target.value && index < 5) {
+                document.querySelectorAll('.otp-input')[index + 1].focus();
+            }
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                document.querySelectorAll('.otp-input')[index - 1].focus();
+            }
+        });
+    });
+
+    function getOTPCode() {
+        return Array.from(document.querySelectorAll('.otp-input'))
+            .map(input => input.value)
+            .join('');
+    }
+
+    function verifyOTP(event) {
+        const btn = event?.currentTarget || document.getElementById('verifyOtpBtn');
+        const otp = getOTPCode();
+        const email = document.getElementById('email').value.trim();
+
+        if (otp.length !== 6) {
+            toastr.error('Please enter a 6-digit OTP');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = 'Verifying...';
+
+        fetch('{% url "accounts:verify_otp" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({ email: email, otp: otp, purpose: 'signup' })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                toastr.success('✅ OTP verified! Creating account...');
+                createAccount(btn);
+            } else {
+                toastr.error('❌ ' + (data.error || 'Invalid OTP'));
+                btn.disabled = false;
+                btn.innerText = 'Verify OTP & Create Account';
+            }
+        })
+        .catch(err => {
+            toastr.error('❌ Error: ' + err.message);
+            btn.disabled = false;
+            btn.innerText = 'Verify OTP & Create Account';
+        });
+    }
+
+    function createAccount(triggerButton) {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const btn = triggerButton || document.getElementById('verifyOtpBtn');
+
+        btn.disabled = true;
+        btn.innerText = 'Creating account...';
+
+        fetch('{% url "accounts:signup" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: new URLSearchParams({
+                email: email,
+                password: password
+            })
+        })
+        .then(async res => {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.success) {
+                toastr.success('🎉 Account created successfully!');
+                setTimeout(() => {
+                    window.location.href = '{% url "accounts:login" %}';
+                }, 2000);
+            } else {
+                toastr.error('❌ ' + (data.error || data.message || 'Failed to create account'));
+                btn.disabled = false;
+                btn.innerText = 'Verify OTP & Create Account';
+            }
+        })
+        .catch(err => {
+            toastr.error('❌ Error: ' + err.message);
+            btn.disabled = false;
+            btn.innerText = 'Verify OTP & Create Account';
+        });
+    }
+
+    function resendOTP(event) {
+        const email = document.getElementById('email').value.trim();
+        const btn = event?.currentTarget || document.getElementById('resendOtpBtn');
+        btn.disabled = true;
+        btn.innerText = 'Sending...';
+
+        fetch('{% url "accounts:send_otp" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({ email: email, purpose: 'signup' })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                toastr.success('✅ OTP resent to your email!');
+                document.querySelectorAll('.otp-input').forEach(input => input.value = '');
+                startOTPTimer();
+                focusFirstOTPInput();
+            } else {
+                toastr.error('❌ ' + (data.error || 'Failed to resend OTP'));
+            }
+        })
+        .catch(err => {
+            toastr.error('Error: ' + err.message);
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerText = 'Resend OTP';
+        });
+    }
+
+    function goBack() {
+        document.getElementById('step1').classList.remove('hidden');
+        document.getElementById('step2').classList.add('hidden');
+        document.querySelectorAll('.otp-input').forEach(input => input.value = '');
+    }
+</script>
+
+</body>
+</html>

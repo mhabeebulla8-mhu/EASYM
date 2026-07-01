@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EasyMart - Login</title>
+
+    {% load static %}
+
+    <!-- CSRF -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Toast Notifications -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.css">
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            font-family: 'Poppins', sans-serif;
+            background: url("{% static 'images/bg.jpeg' %}") no-repeat center/cover;
+        }
+
+        .wrapper {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(to right, rgba(0,0,0,0.6), rgba(0,0,0,0.4));
+        }
+
+        .login-card {
+            width: 430px;
+            padding: 35px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(25px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            color: white;
+        }
+
+        .brand {
+            font-size: 28px;
+            font-weight: 600;
+            text-align: center;
+            color: #ffc107;
+        }
+
+        .tagline {
+            font-size: 13px;
+            text-align: center;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .btn-login {
+            background: #2e7d32;
+            color: white;
+            border-radius: 25px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error {
+            color: #ff6b6b;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="wrapper">
+<div class="login-card">
+
+    <div class="brand">
+        <i class="bi bi-basket2-fill"></i> EasyMart
+    </div>
+
+    <div class="tagline">Fresh groceries. Fast delivery.</div>
+
+    {% if messages %}
+        <div class="alert alert-danger mt-3">
+            {% for message in messages %}
+                {{ message }}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <h5 class="text-center mb-3">Welcome back 👋</h5>
+
+    <!-- ✅ FORM (IMPORTANT FIX) -->
+    <form method="POST" action="{% url 'accounts:login' %}">
+        {% csrf_token %}
+
+        <!-- EMAIL -->
+        <input id="email" name="email" type="email" class="form-control mb-2" placeholder="Enter your Email" required>
+        <div id="user-error" class="error"></div>
+
+        <!-- PASSWORD LOGIN -->
+        <div id="password-login">
+
+            <div class="input-group mb-2">
+                <input id="password" name="password" type="password" class="form-control" placeholder="Password" required>
+                <span class="input-group-text" onclick="togglePassword()">
+                    <i class="bi bi-eye"></i>
+                </span>
+            </div>
+
+            <button type="submit" class="btn btn-login w-100 mt-2">
+                Login
+            </button>
+
+            <p class="text-end mt-2">
+                <a href="{% url 'accounts:forgot_password' %}">Forgot password?</a>
+            </p>
+
+            <div class="text-center mt-2">OR</div>
+
+            <p class="text-center" onclick="switchMode('otp')" style="cursor:pointer;color:#ffc107;">
+                Login with OTP
+            </p>
+        </div>
+    </form>
+
+    <!-- OTP LOGIN -->
+    <div id="otp-login" class="hidden">
+
+        <button id="otpBtn" class="btn btn-warning w-100">
+            Send OTP
+        </button>
+
+        <p id="timerText" class="text-center mt-2" style="font-size: 12px; color:#ccc;"></p>
+
+        <input id="otp" class="form-control mt-2" placeholder="Enter OTP">
+        <div id="otp-error" class="error"></div>
+
+        <button id="verifyBtn" class="btn btn-success w-100 mt-2">
+            Verify & Login
+        </button>
+
+        <p class="text-center mt-2" onclick="switchMode('password')" style="cursor:pointer;color:#ffc107;">
+            Login with password
+        </p>
+    </div>
+
+    <p class="text-center mt-3">
+        New user?
+        <a href="{% url 'accounts:signup' %}">Create account</a>
+    </p>
+
+    <p class="text-center mt-2" style="font-size: 13px;">
+        <a href="{% url 'accounts:login_portal' %}" style="color: #ccc;">← Back to login options</a>
+    </p>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.js"></script>
+<script>
+    toastr.options = {
+        closeButton: true,
+        debug: false,
+        newestOnTop: false,
+        progressBar: true,
+        positionClass: 'toast-top-right',
+        preventDuplicates: false,
+        showDuration: '300',
+        hideDuration: '1000',
+        timeOut: '4000',
+        extendedTimeOut: '1000',
+        showEasing: 'swing',
+        hideEasing: 'linear',
+        showMethod: 'fadeIn',
+        hideMethod: 'fadeOut'
+    };
+
+
+function getCSRFToken() {
+    const metaToken = document.querySelector('meta[name="csrf-token"]');
+    if (metaToken) {
+        return metaToken.getAttribute('content');
+    }
+    return document.cookie.split('; ')
+        .find(row => row.startsWith('csrftoken'))
+        ?.split('=')[1];
+}
+
+function togglePassword() {
+    let pass = document.getElementById('password');
+    pass.type = pass.type === "password" ? "text" : "password";
+}
+
+function switchMode(mode) {
+    document.getElementById('password-login').classList.toggle('hidden', mode === 'otp');
+    document.getElementById('otp-login').classList.toggle('hidden', mode !== 'otp');
+}
+
+// SEND OTP
+document.getElementById('otpBtn').onclick = function () {
+
+    let email = document.getElementById('email').value.trim();
+    document.getElementById('user-error').innerText = '';
+
+    if (!email) {
+        document.getElementById('user-error').innerText = 'Enter email';
+        return;
+    }
+
+    fetch('{% url "accounts:send_otp" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({ email, purpose: 'login' })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            toastr.success(data.message || 'OTP sent to your email');
+            startTimer();
+        } else {
+            document.getElementById('user-error').innerText = data.error || 'Unable to send OTP';
+        }
+    })
+    .catch(() => {
+        document.getElementById('user-error').innerText = 'Unable to send OTP';
+    });
+};
+
+// VERIFY OTP
+document.getElementById('verifyBtn').onclick = function () {
+
+    let email = document.getElementById('email').value.trim();
+    let otp = document.getElementById('otp').value.trim();
+    document.getElementById('otp-error').innerText = '';
+
+    if (!email) {
+        document.getElementById('user-error').innerText = 'Enter email';
+        return;
+    }
+
+    if (!otp) {
+        document.getElementById('otp-error').innerText = 'Enter OTP';
+        return;
+    }
+
+    fetch('{% url "accounts:otp_login" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({ email, otp })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.redirect) {
+            window.location.href = data.redirect;
+        } else {
+            document.getElementById('otp-error').innerText = data.error || 'Invalid OTP';
+        }
+    })
+    .catch(() => {
+        document.getElementById('otp-error').innerText = 'Unable to verify OTP';
+    });
+};
+
+let timer = 60;
+let interval = null;
+
+function startTimer() {
+    const btn = document.getElementById('otpBtn');
+    const text = document.getElementById('timerText');
+
+    btn.disabled = true;
+    text.innerText = `Resend OTP in ${timer}s`;
+
+    interval = setInterval(() => {
+        timer -= 1;
+        text.innerText = `Resend OTP in ${timer}s`;
+
+        if (timer <= 0) {
+            clearInterval(interval);
+            btn.disabled = false;
+            text.innerText = '';
+            timer = 60;
+        }
+    }, 1000);
+}
+
+</script>
+
+</body>
+</html>

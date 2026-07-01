@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Logged Out - EasyMart{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle fa-4x text-success"></i>
+                    </div>
+                    <h3 class="card-title text-success">Logged Out Successfully</h3>
+                    <p class="card-text">You have been successfully logged out of EasyMart.</p>
+                    <p class="text-muted">Redirecting to login page...</p>
+                    <div class="mt-4">
+                        <a href="{% url 'login' %}" class="btn btn-primary">Go to Login</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto redirect after 3 seconds
+    setTimeout(function() {
+        window.location.href = "{% url 'login' %}";
+    }, 3000);
+</script>
+{% endblock %}

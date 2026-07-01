@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+.success-wrapper {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.success-box {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 35px;
+    text-align: center;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+    max-width: 520px;
+    width: 100%;
+    animation: fadeIn 0.6s ease;
+}
+
+/* ✅ Animated Icon */
+.success-icon {
+    width: 80px;
+    height: 80px;
+    background: #dcfce7;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+    font-size: 40px;
+    color: #16a34a;
+    animation: pop 0.5s ease;
+}
+
+@keyframes pop {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.order-id {
+    font-weight: 600;
+    color: #374151;
+}
+
+/* ✅ Info Card */
+.order-info {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: left;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.order-info div {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+/* ✅ Buttons */
+.success-actions a {
+    margin: 6px;
+    border-radius: 10px;
+    padding: 10px 16px;
+}
+
+/* subtle note */
+.redirect-text {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 15px;
+}
+</style>
+
+
+<div class="success-wrapper">
+
+<div class="success-box">
+
+    <!-- ICON -->
+    <div class="success-icon">
+        <i class="bi bi-check-lg"></i>
+    </div>
+
+    <!-- TITLE -->
+    <h3 class="mt-3">Order Confirmed 🎉</h3>
+
+    <p class="order-id">
+        Order #{{ order.id }}
+    </p>
+
+    <p class="text-muted">
+        Your order is being prepared and will be delivered soon 🚀
+    </p>
+
+    <!-- ORDER INFO -->
+    <div class="order-info">
+        <div>
+            <span>Total</span>
+            <strong>₹{{ order.total_price }}</strong>
+        </div>
+        <div>
+            <span>Payment</span>
+            <span>{{ order.payment_method|title }}</span>
+        </div>
+        <div>
+            <span>Status</span>
+            <span>{{ order.get_status_display }}</span>
+        </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="success-actions mt-4">
+
+        <a href="{% url 'orders:track' order.id %}" class="btn btn-success">
+            📦 Track Order
+        </a>
+
+        <a href="{% url 'orders:detail' order.id %}" class="btn btn-outline-secondary">
+            🧾 View Details
+        </a>
+
+        <a href="{% url 'products:home' %}" class="btn btn-outline-dark">
+            🛍 Continue Shopping
+        </a>
+
+    </div>
+
+    <!-- AUTO REDIRECT NOTE -->
+    <p class="redirect-text">
+        Redirecting to tracking page in 5 seconds...
+    </p>
+
+</div>
+
+</div>
+
+
+<script>
+// ✅ Optional: auto redirect to tracking page
+setTimeout(() => {
+    window.location.href = "{% url 'orders:track' order.id %}";
+}, 5000);
+</script>
+
+{% endblock %}

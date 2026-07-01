@@ -1,0 +1,512 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+
+.checkout-wrapper {
+    padding-top: 110px;
+    padding-bottom: 50px;
+    min-height: 100vh;
+    background: #f9fafb;
+}
+
+.checkout-container {
+    max-width: 1200px;
+    margin: auto;
+    padding-inline: 12px;
+}
+
+.checkout-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+    border: 1px solid #f3f4f6;
+}
+
+.section-title {
+    font-weight: 700;
+    margin-bottom: 18px;
+    color: #111827;
+}
+
+.address-box {
+    border: 1px solid #22c55e;
+    border-radius: 12px;
+    padding: 16px;
+    background: #f0fdf4;
+}
+
+.address-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 14px 0;
+    border-bottom: 1px dashed #e5e7eb;
+}
+
+.item-row:last-child {
+    border-bottom: none;
+}
+
+.payment-card {
+    position: sticky;
+    top: 100px;
+    z-index: 1;
+}
+
+.pay-btn {
+    border: none;
+    padding: 14px;
+    font-size: 16px;
+    border-radius: 12px;
+    color: white;
+    width: 100%;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.pay-online {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.pay-cod {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.pay-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.pay-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.empty-box {
+    text-align: center;
+    padding: 25px;
+    color: #6b7280;
+}
+
+.price-highlight {
+    font-weight: 700;
+    color: #16a34a;
+}
+
+.total-box {
+    font-size: 18px;
+}
+
+@media (max-width: 991px) {
+
+    .payment-card {
+        position: relative;
+        top: 0;
+    }
+
+    .checkout-wrapper {
+        padding-top: 90px;
+    }
+}
+
+@media (max-width: 576px) {
+
+    .checkout-card {
+        padding: 18px;
+    }
+
+    .item-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .pay-btn {
+        font-size: 15px;
+        padding: 13px;
+    }
+}
+
+</style>
+
+
+<div class="checkout-wrapper">
+
+<div class="checkout-container">
+
+<div class="row g-4">
+
+<!-- LEFT SIDE -->
+<div class="col-lg-7">
+
+    <!-- ADDRESS -->
+    <div class="checkout-card">
+
+        <h5 class="section-title">
+            📍 Delivery Address
+        </h5>
+
+        {% if address %}
+
+        <div class="address-box">
+
+            <strong>{{ address.full_name }}</strong><br>
+
+            {{ address.address_line }}<br>
+
+            <small>
+                {{ address.city }} - {{ address.pincode }}
+            </small>
+
+            <br>
+
+            <small class="text-muted">
+                Phone : {{ address.phone }}
+            </small>
+
+            <div class="address-actions">
+
+                <a href="{% url 'accounts:address' %}?next=checkout"
+                   class="btn btn-outline-success btn-sm">
+
+                    Change Address
+
+                </a>
+
+                <a href="{% url 'accounts:address' %}?next=checkout"
+                   class="btn btn-outline-dark btn-sm">
+
+                    Add New Address
+
+                </a>
+
+            </div>
+
+        </div>
+
+        {% else %}
+
+        <div class="empty-box">
+
+            <p class="mb-3">
+                No delivery address selected
+            </p>
+
+            <a href="{% url 'accounts:address' %}?next=checkout"
+               class="btn btn-success btn-sm">
+
+                Add Address
+
+            </a>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+    <!-- ORDER ITEMS -->
+    <div class="checkout-card">
+
+        <h5 class="section-title">
+            🛒 Order Items
+        </h5>
+
+        {% for item in items %}
+
+        <div class="item-row">
+
+            <div>
+
+                <strong>
+                    {{ item.product.name }}
+                </strong>
+
+                <br>
+
+                <small class="text-muted">
+                    Quantity : {{ item.quantity }}
+                </small>
+
+            </div>
+
+            <div class="price-highlight">
+                ₹{{ item.product.discounted_price }}
+            </div>
+
+        </div>
+
+        {% empty %}
+
+        <div class="empty-box">
+            No items in cart
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+<!-- RIGHT SIDE -->
+<div class="col-lg-5">
+
+    <div class="checkout-card payment-card">
+
+        <h5 class="section-title">
+            💳 Payment Summary
+        </h5>
+
+        <div class="d-flex justify-content-between mb-2">
+
+            <span>Subtotal</span>
+
+            <span>₹{{ total }}</span>
+
+        </div>
+
+        <div class="d-flex justify-content-between mb-2">
+
+            <span>Delivery Charges</span>
+
+            <span class="text-success fw-bold">
+                FREE
+            </span>
+
+        </div>
+
+        <hr>
+
+        <div class="d-flex justify-content-between mb-4 total-box">
+
+            <strong>Total Amount</strong>
+
+            <strong class="text-success">
+                ₹{{ total }}
+            </strong>
+
+        </div>
+
+        {% if address %}
+
+        <!-- ONLINE PAYMENT -->
+        <button id="pay-btn"
+                class="pay-btn pay-online">
+
+            🚀 Pay Online
+
+        </button>
+
+        <!-- COD -->
+        <button id="cod-btn"
+                class="pay-btn pay-cod mt-3">
+
+            💵 Cash on Delivery
+
+        </button>
+
+        {% else %}
+
+        <button class="pay-btn bg-secondary" disabled>
+
+            Add Delivery Address First
+
+        </button>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+</div>
+</div>
+</div>
+
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+
+const payBtn = document.getElementById("pay-btn");
+const codBtn = document.getElementById("cod-btn");
+
+
+function resetButtons() {
+
+    if (payBtn) {
+        payBtn.disabled = false;
+        payBtn.innerText = "🚀 Pay Online";
+    }
+
+    if (codBtn) {
+        codBtn.disabled = false;
+        codBtn.innerText = "💵 Cash on Delivery";
+    }
+}
+
+
+function getCSRFToken() {
+
+    return document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+
+        ?.split('=')[1];
+}
+
+
+if (payBtn) {
+
+    payBtn.onclick = async function () {
+
+        try {
+
+            payBtn.disabled = true;
+            payBtn.innerText = "Processing...";
+
+            const response = await fetch(
+                "/orders/create-razorpay-order/"
+            );
+
+            const data = await response.json();
+
+            if (data.error) {
+                alert(data.error);
+                resetButtons();
+                return;
+            }
+
+            const options = {
+
+                key: data.key,
+
+                amount: data.amount,
+
+                currency: "INR",
+
+                name: "EasyMart",
+
+                description: "Order Payment",
+
+                order_id: data.order_id,
+
+                handler: async function (response) {
+
+                    try {
+
+                        const verifyResponse = await fetch(
+                            "/orders/verify-payment/",
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "X-CSRFToken": getCSRFToken()
+                                },
+
+                                body: JSON.stringify(response)
+                            }
+                        );
+
+                        const verifyData = await verifyResponse.json();
+
+                        if (verifyData.status === "success") {
+
+                            window.location.href =
+                                `/orders/success/${verifyData.order_id}/`;
+
+                        } else {
+
+                            alert("Payment verification failed");
+                            resetButtons();
+                        }
+
+                    } catch {
+
+                        alert("Payment processing failed");
+                        resetButtons();
+                    }
+                }
+            };
+
+            const rzp = new Razorpay(options);
+
+            rzp.open();
+
+            rzp.on('payment.failed', function () {
+
+                alert("Payment Failed");
+
+                resetButtons();
+
+            });
+
+        } catch {
+
+            alert("Something went wrong");
+
+            resetButtons();
+        }
+    };
+}
+
+
+if (codBtn) {
+
+    codBtn.onclick = async function () {
+
+        try {
+
+            codBtn.disabled = true;
+
+            codBtn.innerText = "Placing Order...";
+
+            const response = await fetch(
+                "/orders/place-cod-order/",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "X-CSRFToken": getCSRFToken()
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            if (data.status === "success") {
+
+                window.location.href =
+                    `/orders/success/${data.order_id}/`;
+
+            } else {
+
+                alert(data.message || "COD Failed");
+
+                resetButtons();
+            }
+
+        } catch {
+
+            alert("Something went wrong");
+
+            resetButtons();
+        }
+    };
+}
+
+</script>
+
+{% endblock %}

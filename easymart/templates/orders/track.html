@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+.track-wrapper {
+    max-width: 750px;
+    margin: 40px auto;
+}
+
+.track-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 30px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* HEADER */
+.order-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+/* PROGRESS BAR */
+.progress {
+    height: 6px;
+    border-radius: 10px;
+    background: #e5e7eb;
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    transition: width 0.5s ease;
+}
+
+/* WIDTH STATES */
+.w-20 { width: 20%; }
+.w-40 { width: 40%; }
+.w-60 { width: 60%; }
+.w-80 { width: 80%; }
+.w-100 { width: 100%; }
+
+/* STEP TRACKER (HORIZONTAL) */
+.steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 25px;
+}
+
+.step {
+    text-align: center;
+    flex: 1;
+    position: relative;
+}
+
+.step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 12px;
+    right: -50%;
+    width: 100%;
+    height: 2px;
+    background: #e5e7eb;
+    z-index: 0;
+}
+
+.step.active:not(:last-child)::after {
+    background: #22c55e;
+}
+
+/* CIRCLE */
+.circle {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    margin: auto;
+    background: #e5e7eb;
+    position: relative;
+    z-index: 1;
+}
+
+.circle.active {
+    background: #22c55e;
+}
+
+.circle.active::after {
+    content: "✓";
+    color: white;
+    font-size: 14px;
+    position: absolute;
+    top: 2px;
+    left: 7px;
+}
+
+/* LABEL */
+.step-label {
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+/* INFO BOX */
+.info-box {
+    background: #f9fafb;
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.info-box div {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+/* ETA */
+.eta {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 14px;
+    color: #16a34a;
+    font-weight: 500;
+}
+</style>
+
+
+<div class="track-wrapper">
+
+<div class="track-card">
+
+    <!-- HEADER -->
+    <div class="order-header">
+        <h4>📦 Track Order #{{ order.id }}</h4>
+        <p class="text-muted">
+            Status: <strong>{{ order.get_status_display }}</strong>
+        </p>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="progress">
+        <div class="progress-bar
+            {% if order.status == 'pending' %}w-20
+            {% elif order.status == 'confirmed' %}w-40
+            {% elif order.status == 'packed' %}w-60
+            {% elif order.status == 'out_for_delivery' %}w-80
+            {% elif order.status == 'delivered' %}w-100
+            {% endif %}
+        "></div>
+    </div>
+
+    <!-- STEPS -->
+    <div class="steps">
+
+        <div class="step active">
+            <div class="circle active"></div>
+            <div class="step-label">Placed</div>
+        </div>
+
+        <div class="step {% if order.status != 'pending' %}active{% endif %}">
+            <div class="circle {% if order.status != 'pending' %}active{% endif %}"></div>
+            <div class="step-label">Confirmed</div>
+        </div>
+
+        <div class="step {% if order.status in 'packed out_for_delivery delivered' %}active{% endif %}">
+            <div class="circle {% if order.status in 'packed out_for_delivery delivered' %}active{% endif %}"></div>
+            <div class="step-label">Packed</div>
+        </div>
+
+        <div class="step {% if order.status in 'out_for_delivery delivered' %}active{% endif %}">
+            <div class="circle {% if order.status in 'out_for_delivery delivered' %}active{% endif %}"></div>
+            <div class="step-label">Out</div>
+        </div>
+
+        <div class="step {% if order.status == 'delivered' %}active{% endif %}">
+            <div class="circle {% if order.status == 'delivered' %}active{% endif %}"></div>
+            <div class="step-label">Delivered</div>
+        </div>
+
+    </div>
+
+    <!-- ETA -->
+    {% if order.status != 'delivered' %}
+    <div class="eta">
+        🚚 Estimated delivery in 5–10 minutes
+    </div>
+    {% else %}
+    <div class="eta">
+        🎉 Delivered successfully
+    </div>
+    {% endif %}
+
+    <!-- INFO -->
+    <div class="info-box">
+        <div>
+            <span>Total</span>
+            <strong>₹{{ order.total_price }}</strong>
+        </div>
+        <div>
+            <span>Payment</span>
+            <span>{{ order.payment_method|title }}</span>
+        </div>
+        <div>
+            <span>Placed on</span>
+            <span>{{ order.created_at|date:"M d, Y • h:i A" }}</span>
+        </div>
+    </div>
+
+    <!-- ACTION -->
+    <div class="text-center mt-4">
+        <a href="{% url 'orders:history' %}" class="btn btn-outline-dark">
+            View All Orders
+        </a>
+    </div>
+
+</div>
+
+</div>
+
+
+<script>
+// 🔄 AUTO REFRESH (simulate real-time tracking)
+setInterval(() => {
+    location.reload();
+}, 30000);  // Changed from 8000ms (8 seconds) to 30000ms (30 seconds)
+</script>
+
+{% endblock %}

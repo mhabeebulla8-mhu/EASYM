@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+
+/* HERO / ADS */
+.hero {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.banner {
+  background: linear-gradient(135deg, #16a34a, #4ade80);
+  padding: 40px;
+  border-radius: 16px;
+  color: white;
+}
+
+.banner h1 {
+  font-weight: 700;
+}
+
+.ad-box {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.ad-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* CATEGORY */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px,1fr));
+  gap: 15px;
+}
+
+.category-card {
+  background: white;
+  padding: 12px;
+  text-align: center;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.3s;
+  font-weight: 500;
+}
+
+.category-card:hover {
+  background: #16a34a;
+  color: white;
+}
+
+/* PRODUCTS */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
+  gap: 20px;
+}
+
+.product-card {
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  transition: 0.3s;
+}
+
+.product-card:hover {
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.product-card img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.product-name {
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.product-price {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+/* DISCOUNT BADGE & PRICING */
+.discount-badge {
+  display: inline-block;
+  background: #dc2626;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 6px;
+}
+
+.price-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.original-price {
+  text-decoration: line-through;
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.discounted-price {
+  color: #16a34a;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* ADD BUTTON */
+.btn-add {
+  background: #16a34a;
+  color: white;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+/* FOOTER (LOCAL PAGE FOOTER SECTION) */
+.home-footer {
+  margin-top: 50px;
+  padding: 30px;
+  background: white;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* SECTION */
+.section-title {
+  margin-top: 35px;
+  font-weight: 600;
+}
+
+</style>
+
+
+<!-- CATEGORY -->
+<h5 class="section-title">Shop by Category</h5>
+
+<div class="category-grid mt-3">
+{% for category in categories %}
+  <div class="category-card"
+       onclick="window.location.href='?category={{ category }}'">
+      {{ category }}
+  </div>
+{% endfor %}
+</div>
+
+
+<!-- STORE URL -->
+<input type="hidden" id="add-to-cart-url" value="{% url 'cart:add' %}">
+
+
+<!-- PRODUCTS -->
+<h5 class="section-title">Trending Products</h5>
+
+<div class="product-grid mt-3">
+{% for product in products %}
+
+<div class="product-card">
+
+    <a href="{% url 'products:product' product.id %}">
+        <img src="{{ product.image_url }}" alt="{{ product.name }}">
+      
+    </a>
+
+    <div class="product-name">{{ product.name }}</div>
+
+    <div class="d-flex justify-content-between align-items-center">
+        {% if product.discount > 0 %}
+        <div class="price-container">
+            <span class="original-price">₹{{ product.price }}</span>
+            <span class="discounted-price">₹{{ product.discounted_price|floatformat:0 }}</span>
+            <span class="discount-badge">-{{ product.discount }}%</span>
+        </div>
+        {% else %}
+        <span class="product-price">₹{{ product.price }}</span>
+        {% endif %}
+        <small>{{ product.category }}</small>
+    </div>
+
+    <button 
+        class="btn-add add-to-cart-btn"
+        data-id="{{ product.id }}">
+        Add
+    </button>
+
+</div>
+
+{% endfor %}
+</div>
+
+
+<!-- FOOTER SECTION -->
+<div class="home-footer">
+  <p><strong>EasyMart</strong> - Fresh groceries delivered at your doorstep</p>
+  <p>Fast Delivery | Best Prices | Quality Products</p>
+</div>
+
+
+<!-- JS -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const url = document.getElementById("add-to-cart-url").value;
+
+    document.querySelectorAll(".add-to-cart-btn").forEach(button => {
+
+        button.addEventListener("click", function () {
+
+            const productId = this.dataset.id;
+            const btn = this;
+
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCSRFToken()
+                },
+                body: JSON.stringify({ product_id: productId })
+            })
+            .then(res => res.json())
+            .then(data => {
+
+                if (data.success) {
+                    btn.innerText = "✓ Added";
+
+                    const badge = document.querySelector(".cart-badge");
+                    if (badge) badge.innerText = data.cart_count;
+                }
+
+            });
+
+        });
+
+    });
+
+});
+
+function getCSRFToken() {
+    let cookies = document.cookie.split(";");
+    for (let c of cookies) {
+        if (c.trim().startsWith("csrftoken=")) {
+            return c.split("=")[1];
+        }
+    }
+}
+</script>
+
+{% endblock %}

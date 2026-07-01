@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+.order-container {
+    max-width: 900px;
+    margin: auto;
+}
+
+/* CARD */
+.order-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+    transition: 0.25s ease;
+}
+
+.order-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+}
+
+/* HEADER */
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.order-id {
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.order-date {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* PRICE */
+.order-price {
+    color: #16a34a;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+/* STATUS BADGE */
+.status-badge {
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.pending { background: #fef9c3; color: #854d0e; }
+.confirmed { background: #dbeafe; color: #1e40af; }
+.packed { background: #e0f2fe; color: #075985; }
+.out_for_delivery { background: #ffedd5; color: #c2410c; }
+.delivered { background: #dcfce7; color: #166534; }
+
+/* PAYMENT TAG */
+.payment-tag {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    margin-left: 8px;
+}
+
+/* ITEMS PREVIEW */
+.items-preview {
+    font-size: 13px;
+    color: #4b5563;
+    margin-top: 6px;
+}
+
+/* ACTIONS */
+.order-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+}
+
+.order-actions a {
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+/* EMPTY STATE */
+.empty-box {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon {
+    font-size: 60px;
+    color: #d1d5db;
+}
+</style>
+
+
+<div class="order-container mt-4">
+
+    <h3 class="mb-4">📦 My Orders</h3>
+
+    {% if orders %}
+
+        {% for order in orders %}
+        <div class="order-card">
+
+            <!-- HEADER -->
+            <div class="order-header">
+
+                <div>
+                    <div class="order-id">
+                        Order #{{ order.id }}
+                        <span class="payment-tag">
+                            {{ order.payment_method|title }}
+                        </span>
+                    </div>
+
+                    <div class="order-date">
+                        {{ order.created_at|date:"M d, Y • h:i A" }}
+                    </div>
+                </div>
+
+                <div>
+                    <span class="status-badge {{ order.status }}">
+                        {{ order.get_status_display }}
+                    </span>
+                </div>
+
+            </div>
+
+            <!-- PRICE -->
+            <div class="d-flex justify-content-between mt-2">
+                <div class="order-price">
+                    ₹{{ order.total_price }}
+                </div>
+            </div>
+
+            <!-- ITEMS PREVIEW -->
+            <div class="items-preview">
+                {% for item in order.items.all|slice:":2" %}
+                    {{ item.product.name }} × {{ item.quantity }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+                {% if order.items.count > 2 %}
+                    +{{ order.items.count|add:"-2" }} more items
+                {% endif %}
+            </div>
+
+            <!-- ACTIONS -->
+            <div class="order-actions">
+
+                <a href="{% url 'orders:track' order.id %}" 
+                   class="btn btn-success btn-sm">
+                    Track
+                </a>
+
+                <a href="{% url 'orders:detail' order.id %}" 
+                   class="btn btn-outline-dark btn-sm">
+                    Details
+                </a>
+
+            </div>
+
+        </div>
+        {% endfor %}
+
+    {% else %}
+
+        <!-- EMPTY STATE -->
+        <div class="empty-box">
+
+            <div class="empty-icon">🛒</div>
+
+            <h5 class="mt-3">No Orders Yet</h5>
+            <p class="text-muted">
+                Looks like you haven't placed any orders yet.
+            </p>
+
+            <a href="{% url 'products:home' %}" class="btn btn-success mt-2">
+                Start Shopping
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,324 @@
+EASYMART PROJECT EXPLANATION
+===========================
+
+1. PROJECT OVERVIEW
+-------------------
+EasyMart is a Django-based grocery delivery web application built with a standard MVC architecture. It includes:
+- User authentication and profile management
+- Product browsing, search, category filtering
+- Shopping cart with add/update/remove actions
+- Checkout page with two payment methods: Razorpay online payment and Cash on Delivery (COD)
+- Order history, order detail, and order tracking
+- Admin management via Django/Jazzmin
+
+The application uses Django for backend business logic, HTML/CSS/JavaScript for frontend pages, and SQLite for development database storage.
+
+2. TECHNOLOGIES USED
+---------------------
+Backend:
+- Django 6.0.4
+- Python
+- Django ORM for database models
+- Django views, templates, middleware, forms, and async-safe transaction handling
+- Razorpay Python SDK for payment gateway integration
+
+Frontend:
+- HTML5 templates under `templates/`
+- Bootstrap-like custom styling in templates
+- JavaScript for AJAX operations and Razorpay checkout integration
+- Razorpay Checkout script loaded from `https://checkout.razorpay.com/v1/checkout.js`
+
+Database:
+- SQLite (`db.sqlite3`) in development
+- Django models define schema and relationships
+- Models use indexes and related names for fast lookups
+
+APIs:
+- Custom Django view endpoints for login, signup, cart actions, checkout, payment creation, and payment verification
+- Razorpay API endpoints are called server-side via the Razorpay SDK
+- Frontend AJAX calls communicate with application endpoints over JSON
+
+3. PROJECT APPS AND RESPONSIBILITIES
+-----------------------------------
+Root Django apps:
+- `accounts`: user model, OTP, address management, login/signup/logout, profile, password reset
+- `products`: category, product, and offer models; home page, product details, category page, sample data loader
+- `cart`: cart and cart item models; add/update/remove cart operations and cart view
+- `orders`: order and order item models; checkout logic, payment integration, COD flow, order history, detail, tracking
+
+4. BACKEND LOGIC AND CODE FLOW
+------------------------------
+4.1 Settings & Environment
+- `easymart/settings.py` loads `.env` with `load_dotenv()`
+- Razorpay credentials come from `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET`
+- Global security, email backend, static/media settings, installed apps, middleware, and logging are configured here
+
+4.2 Accounts App
+-----------------
+Models:
+- `User` extends `AbstractUser` and enforces unique email and optional phone
+- `OTPCode` stores one-time passwords for signup, login, reset and expires after 5 minutes
+- `Address` stores user address entries and ensures one default address per user
+
+Views:
+- `signup(request)`: handles account creation after OTP verification
+- `user_login(request)`: authenticates user by email and password
+- `api_login(request)`: JSON login endpoint for AJAX calls
+- `otp_login(request)`: verifies OTP and logs in the user
+- `logout_view(request)`: ends the session
+
+Key logic:
+- `generate_username(email)` creates a unique username from email local part
+- `is_valid_email(email)` validates email format before processing
+- Validated OTP objects are required for signup and password reset flows
+
+4.3 Products App
+-----------------
+Models:
+- `Category`: product categories with auto-generated slugs
+- `Product`: grocery items with price, stock, discount, availability, and slug generation
+- `Offer`: hero banners/offers with active date range logic
+
+Product fields and helpers:
+- `discount_amount`: computed discount value
+- `discounted_price`: final price after discount
+- `image_url`: returns image URL or fallback default
+- `save()`: validates discount, price, stock; auto-generates slug and availability
+
+Views:
+- `home(request)`: main landing/product listing page
+  - loads sample products if none exist
+  - allows search and category filtering
+  - shows active offers and loads cart item counts for signed-in or guest users
+- `product_detail(request, id)`: displays a single product page
+- `category_view(request)`: displays category list
+
+Sample data:
+- `ensure_sample_products()` creates sample categories and products on first request
+
+4.4 Cart App
+------------
+Models:
+- `Cart`: belongs to a user, stores timestamp, has helper methods for total price and total items
+- `CartItem`: connects a cart to a product with quantity, calculates subtotal and image URL
+
+Views:
+- `cart_view(request)`: renders `cart/cart.html` with items and total amount
+- `add_to_cart(request)`: adds a product to authenticated user cart or guest session cart
+- `update_cart(request)`: increases/decreases quantity and recalculates totals
+
+Guest cart support:
+- If user is not authenticated, cart data is saved in `request.session['guest_cart']`
+- The session cart structure is a dictionary mapping product IDs to quantities
+
+4.5 Orders App
+--------------
+Models:
+- `Order`: tracks user, payment method/status, order status, total price, address snapshot, and Razorpay fields
+- `OrderItem`: stores each ordered product and its price at order time
+
+Order statuses:
+- `pending`, `confirmed`, `packed`, `out_for_delivery`, `delivered`, `cancelled`
+
+Payment statuses:
+- `pending`, `paid`, `failed`
+
+Views:
+- `checkout(request)`: shows checkout page with cart items and delivery address
+- `create_razorpay_order(request)`: creates a Razorpay order via SDK and returns order metadata
+- `verify_payment(request)`: verifies Razorpay signature and finalizes the order
+- `create_final_order_logic(request)`: converts cart items into an `Order` and `OrderItem` entries, reduces stock, clears cart, and starts status update thread
+- `place_cod_order(request)`: places cash-on-delivery orders directly without online payment
+- `success(request, order_id)`: displays order success page
+- `history(request)`: lists past user orders
+- `order_detail(request, order_id)`: shows order details and items
+- `track_order(request, order_id)`: shows the current order status
+
+Order creation:
+- Uses `@transaction.atomic` to ensure atomic operations when creating orders and items
+- Reduces product stock using `item.product.stock -= item.quantity`
+- Clears cart items after creating the order
+- Starts a background thread to auto-update order status every 60 seconds for demo
+
+5. FRONTEND FLOW
+----------------
+5.1 Templates
+- `templates/base.html`: shared site layout, navigation, header/footer (not fully read, but referenced by all pages)
+- `templates/index.html`: home page showing products, search, categories, and offers
+- `templates/products/product.html`: product detail page
+- `templates/cart/cart.html`: cart contents page
+- `templates/orders/checkout.html`: checkout page with payment buttons and Razorpay integration script
+- `templates/orders/success.html`: success confirmation page
+- `templates/orders/history.html`: user order history page
+
+5.2 User flow
+- User visits landing page `/` or `/products/home/`
+- Product listing shows available items and filtered by category/search
+- Users add items to cart via AJAX calls
+- Authenticated users view cart at `/cart/`
+- From cart, user goes to `/orders/checkout/`
+- On checkout, the page displays current cart items, total amount, and delivery address
+- User chooses either:
+  - `Pay Online`: launches Razorpay popup
+  - `Cash on Delivery`: sends a POST to `/orders/place-cod-order/`
+
+5.3 AJAX and JavaScript
+- `checkout.html` includes Razorpay checkout script
+- `payBtn.onclick` sends request to `/orders/create-razorpay-order/`
+- Backend returns Razorpay `order_id`, `amount`, and public key
+- JavaScript configures Razorpay options and opens the checkout widget
+- On successful payment, the handler sends payment response to `/orders/verify-payment/`
+- If verification passes, user is redirected to `/orders/success/<order_id>/`
+- COD button sends POST to `/orders/place-cod-order/` and redirects to success page
+
+CSRF token handling:
+- `getCSRFToken()` reads `csrftoken` cookie and attaches it to AJAX POST headers
+- Required for Django CSRF protection on POST endpoints
+
+6. DATABASE MODEL SUMMARY
+--------------------------
+6.1 Main tables and relationships
+- `accounts_user`: custom user table with email, phone, created_at, updated_at
+- `accounts_otpcode`: OTP tracking for signup/login/reset
+- `accounts_address`: user shipping addresses, one default address per user
+- `products_category`: product categories
+- `products_product`: product catalog with category relation, stock, pricing, discount, availability
+- `products_offer`: banners/offers referencing categories
+- `cart_cart`: user shopping cart container
+- `cart_cartitem`: product entries in the cart with quantity
+- `orders_order`: order records with address snapshot, payment info, status fields
+- `orders_orderitem`: ordered products and per-item prices
+
+6.2 Important indexes
+- `Cart` and `CartItem` include indexes on `user`, `cart`, `product`
+- `Order` includes indexes on `user`, `status`, and `payment_status`
+- `Product` includes indexes for slug, availability, category, and updated timestamp
+
+7. API ROUTES AND ENDPOINTS
+---------------------------
+Accounts:
+- `GET /accounts/signup/` - signup page
+- `POST /accounts/signup/` - create user after OTP validation
+- `GET /accounts/login/` - login page
+- `POST /accounts/login/` - login form submit
+- `POST /accounts/api/login/` - JSON login API
+- `POST /accounts/api/send-otp/` - send OTP for login/signup/reset (exists in code but not fully shown)
+- `POST /accounts/api/verify-otp/` - verify OTP code
+- `GET /accounts/logout/` - logout
+
+Products:
+- `GET /products/home/` - product listing and search
+- `GET /products/product/<id>/` - product detail page
+- `GET /products/category/` - category list page
+
+Cart:
+- `GET /cart/` - view cart
+- `POST /cart/add/` - add item to cart
+- `POST /cart/update/` - increase or decrease item quantity
+- `GET /cart/remove/<id>/` - remove specific cart item
+- `POST /cart/remove-ajax/` - remove item via AJAX
+
+Orders:
+- `GET /orders/checkout/` - checkout page
+- `POST /orders/create-razorpay-order/` - create Razorpay order on server
+- `POST /orders/verify-payment/` - verify payment signature and finalize order
+- `POST /orders/place-cod-order/` - place cash-on-delivery order
+- `GET /orders/success/<order_id>/` - order success page
+- `GET /orders/history/` - user order history
+- `GET /orders/detail/<order_id>/` - order detail page
+- `GET /orders/track/<order_id>/` - order tracking page
+
+8. RAZORPAY INTEGRATION
+------------------------
+8.1 Configuration
+- Keys are stored in `.env` as `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET`
+- Loaded into Django settings via `os.getenv()` in `easymart/settings.py`
+
+8.2 Server-side integration
+- `orders/views.py` creates the Razorpay client with:
+  - `razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))`
+- `create_razorpay_order()` calculates amount in paise and calls:
+  - `client.order.create({"amount": amount, "currency": "INR", "payment_capture": 1})`
+- Response includes `order_id` and `amount` for frontend checkout
+
+8.3 Frontend payment flow
+- The checkout page loads Razorpay's JS script
+- On click, it fetches `/orders/create-razorpay-order/`
+- It then opens Razorpay checkout with the returned order data
+- After successful payment, Razorpay calls `handler()` with response
+- The response is posted to `/orders/verify-payment/`
+
+8.4 Verification
+- `verify_payment()` builds a param dict with:
+  - `razorpay_order_id`
+  - `razorpay_payment_id`
+  - `razorpay_signature`
+- Calls `client.utility.verify_payment_signature(params_dict)`
+- If valid, it proceeds to create the final order and returns success
+- On invalid signature, it returns `verification_failed`
+
+9. COMMON BUGS AND FIXES
+------------------------
+9.1 Razorpay authentication errors
+- If keys are wrong or not loaded, the API returns "Authentication failed"
+- Ensure `.env` is present and `load_dotenv()` is run before access
+- Confirm the keys are active in Razorpay dashboard
+
+9.2 Payment order creation failure
+- The server-side endpoint must be accessed by an authenticated user
+- Cart must contain items before Razorpay order is created
+
+9.3 Order status tracking
+- The app uses a background thread to update order status for demo purposes
+- This is not production-grade, but it demonstrates the order lifecycle in the UI
+
+10. HOW REQUESTS FLOW THROUGH THE SYSTEM
+----------------------------------------
+1. User opens `/` and Django routes them to `products.views.landing_page()` which calls `home(request)`.
+2. `home()` queries `Product`, `Category`, and `Offer` models, prepares cart counts, and renders `index.html`.
+3. User clicks "Add to Cart" and browser sends AJAX POST to `/cart/add/`.
+   - Server adds item to `CartItem` for authenticated users
+   - For guests, it stores item in session
+4. User navigates to `/cart/` and sees the contents rendered by `cart_view()`.
+5. User goes to `/orders/checkout/`.
+   - `checkout()` loads cart items and default address, then renders `checkout.html`
+6. User chooses online payment.
+   - `checkout.html` calls `/orders/create-razorpay-order/`
+   - Server creates Razorpay order and returns metadata
+   - Browser opens Razorpay widget and collects payment details
+7. Razorpay returns `razorpay_payment_id` and `razorpay_signature`.
+8. Browser POSTs that response to `/orders/verify-payment/`.
+9. Server verifies the signature.
+   - If valid, `create_final_order_logic()` is executed
+   - Creates `Order` and `OrderItem` records, reduces stock, clears cart
+   - Returns `success` with `order_id`
+10. User is redirected to `/orders/success/<order_id>/`.
+
+11. COD flow is simpler:
+   - Browser POSTs to `/orders/place-cod-order/`
+   - Server validates stock, creates order with `payment_status='pending'`
+   - Clears cart and redirects to success page
+
+11. KEY BACKEND FEATURES FOR EXAM PREPARATION
+--------------------------------------------
+- Custom `User` model with email uniqueness and optional phone
+- OTP-based signup/login logic for higher security
+- Cart storage for both authenticated and guest users
+- Direct integration with Razorpay payment gateway
+- Atomic order creation with transaction safety
+- Product auto-slug generation and availability calculation
+- Address snapshot stored inside orders for audit and delivery
+- AJAX-based frontend actions for responsive interactions
+
+12. SUMMARY
+-----------
+EasyMart is a full-stack Django application that demonstrates a realistic e-commerce workflow:
+- user registration and authentication,
+- product browsing,
+- cart management,
+- checkout and payment processing,
+- order lifecycle tracking.
+
+The backend uses Django models, views, and the Razorpay SDK. The frontend uses Django templates with JavaScript to make the experience interactive and support AJAX payments.
+
+Use this file to revise the architecture, the data flow, and the payment integration when preparing for your exam.

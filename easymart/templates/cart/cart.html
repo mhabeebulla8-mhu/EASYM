@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+.cart-card {
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+
+.qty-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+}
+
+.product-img {
+    border-radius: 12px;
+    object-fit: cover;
+    width: 100%;
+    height: 100px;
+}
+
+.empty-cart {
+    text-align: center;
+    padding: 80px 20px;
+    color: #777;
+}
+</style>
+
+<div class="container mt-5">
+    <div class="row g-4">
+
+        <!-- 🛒 CART ITEMS -->
+        <div class="col-lg-8" id="cart-items-container">
+
+            <h3 class="mb-4 fw-bold">🛒 Shopping Cart</h3>
+
+            {% if items %}
+
+                {% for item in items %}
+                <div class="card cart-card p-3 mb-3 cart-item"
+                     id="item-{{ item.product.id }}">
+
+                    <div class="row align-items-center">
+
+                        <!-- IMAGE -->
+                        <div class="col-md-3">
+                            <img src="{{ item.product.image_url }}"
+                                 class="img-fluid product-img"
+                                 loading="lazy"
+                                 alt="{{ item.product.name }}"
+                                 onerror="this.src='/static/images/default.png'">
+                        </div>
+
+                        <!-- DETAILS -->
+                        <div class="col-md-3">
+                            <h5 class="fw-semibold">
+                                {{ item.product.name }}
+                            </h5>
+
+                            <p class="text-muted mb-1">
+                                ₹{{ item.product.discounted_price }}
+                            </p>
+
+                            <small class="text-success">
+                                In Stock
+                            </small>
+                        </div>
+
+                        <!-- QUANTITY -->
+                        <div class="col-md-3 text-center">
+                            <div class="d-flex justify-content-center align-items-center gap-2">
+
+                                <button class="btn btn-outline-dark qty-btn"
+                                        data-id="{{ item.product.id }}"
+                                        data-action="decrease">
+                                    −
+                                </button>
+
+                                <span id="qty-{{ item.product.id }}"
+                                      class="fw-bold">
+                                    {{ item.quantity }}
+                                </span>
+
+                                <button class="btn btn-outline-success qty-btn"
+                                        data-id="{{ item.product.id }}"
+                                        data-action="increase">
+                                    +
+                                </button>
+
+                            </div>
+                        </div>
+
+                        <!-- REMOVE -->
+                        <div class="col-md-3 text-end">
+                            <button class="remove-btn btn btn-danger"
+                                    data-id="{{ item.product.id }}">
+                                🗑 Remove
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+                {% endfor %}
+
+            {% else %}
+
+                <div class="empty-cart">
+                    <h4>Your cart is empty 🛒</h4>
+
+                    <p>
+                        Start adding products to see them here.
+                    </p>
+
+                    <a href="{% url 'products:home' %}"
+                       class="btn btn-success mt-3">
+                        Continue Shopping
+                    </a>
+                </div>
+
+            {% endif %}
+
+        </div>
+
+        <!-- 💳 ORDER SUMMARY -->
+        <div class="col-lg-4">
+
+            <div class="card cart-card p-4 sticky-top"
+                 style="top: 100px;">
+
+                <h4 class="fw-bold mb-3">
+                    Order Summary
+                </h4>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal</span>
+
+                    <span>
+                        ₹<span id="cart-total">
+                            {{ total }}
+                        </span>
+                    </span>
+                </div>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Delivery</span>
+
+                    <span class="text-success">
+                        Free
+                    </span>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-between fw-bold mb-3">
+                    <span>Total</span>
+
+                    <span>
+                        ₹<span id="cart-total-final">
+                            {{ total }}
+                        </span>
+                    </span>
+                </div>
+
+                {% if items %}
+                <a href="{% url 'orders:checkout' %}"
+                   class="btn btn-success w-100">
+                    Proceed to Checkout →
+                </a>
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const updateUrl = "{% url 'cart:update_cart' %}";
+    const removeUrl = "{% url 'cart:remove_ajax' %}";
+
+    document.body.addEventListener("click", function (e) {
+
+        // ====================================
+        // ➕➖ UPDATE CART
+        // ====================================
+        if (e.target.classList.contains("qty-btn")) {
+
+            const productId = e.target.dataset.id;
+            const action = e.target.dataset.action;
+
+            fetch(updateUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCSRFToken()
+                },
+                credentials: "same-origin",
+                body: JSON.stringify({
+                    product_id: productId,
+                    action: action
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+
+                if (!data.success) {
+                    alert(data.error || "Update failed");
+                    return;
+                }
+
+                const qtyEl = document.getElementById(
+                    `qty-${productId}`
+                );
+
+                const card = document.getElementById(
+                    `item-${productId}`
+                );
+
+                if (data.quantity <= 0) {
+
+                    if (card) {
+                        card.remove();
+                    }
+
+                } else {
+
+                    if (qtyEl) {
+                        qtyEl.innerText = data.quantity;
+                    }
+                }
+
+                // UPDATE TOTAL
+                document.getElementById(
+                    "cart-total"
+                ).innerText = data.total;
+
+                document.getElementById(
+                    "cart-total-final"
+                ).innerText = data.total;
+
+                // UPDATE NAVBAR COUNT
+                if (typeof updateCartCount === "function") {
+                    updateCartCount(data.cart_count);
+                }
+
+                // EMPTY CART RELOAD
+                if (data.cart_count === 0) {
+                    location.reload();
+                }
+
+            })
+            .catch(error => {
+                console.error(error);
+                alert("❌ Error updating cart");
+            });
+        }
+
+        // ====================================
+        // ❌ REMOVE ITEM
+        // ====================================
+        if (e.target.classList.contains("remove-btn")) {
+
+            const productId = e.target.dataset.id;
+
+            const card = document.getElementById(
+                `item-${productId}`
+            );
+
+            fetch(removeUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCSRFToken()
+                },
+                credentials: "same-origin",
+                body: JSON.stringify({
+                    product_id: productId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+
+                if (!data.success) {
+                    alert("Remove failed");
+                    return;
+                }
+
+                if (card) {
+                    card.remove();
+                }
+
+                // UPDATE NAVBAR COUNT
+                if (typeof updateCartCount === "function") {
+                    updateCartCount(data.cart_count);
+                }
+
+                // RELOAD IF EMPTY
+                if (data.cart_count === 0) {
+                    location.reload();
+                }
+
+            })
+            .catch(error => {
+                console.error(error);
+                alert("❌ Error removing item");
+            });
+        }
+
+    });
+
+});
+</script>
+{% endblock %}
