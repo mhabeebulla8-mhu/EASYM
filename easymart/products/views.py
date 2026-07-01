@@ -52,26 +52,49 @@ SAMPLE_PRODUCTS = [
 def ensure_sample_products():
 
     # ❌ FIX: Prevent re-running logic every request
-    if Product.objects.exists():
-        return
+    if not Product.objects.exists():
+        for item in SAMPLE_PRODUCTS:
+            category_name = item["category"]
+            category, _ = Category.objects.get_or_create(
+                name=category_name,
+                defaults={"slug": slugify(category_name)}
+            )
+            Product.objects.create(
+                category=category,
+                name=item["name"],
+                price=item["price"],
+                stock=item["stock"],
+                weight=item["weight"],
+                description="Fresh and high quality product"
+            )
 
-    for item in SAMPLE_PRODUCTS:
-
-        category_name = item["category"]
-
-        category, _ = Category.objects.get_or_create(
-            name=category_name,
-            defaults={"slug": slugify(category_name)}
-        )
-
-        Product.objects.create(
-            category=category,
-            name=item["name"],
-            price=item["price"],
-            stock=item["stock"],
-            weight=item["weight"],
-            description="Fresh and high quality product"
-        )
+    if not Offer.objects.exists():
+        import os
+        from django.core.files import File
+        from django.conf import settings
+        
+        offers_data = [
+            {"title": "Fresh Fruits Special", "subtitle": "Up to 20% OFF on organic fruits", "image_name": "apple.jpg", "category": "Fruits"},
+            {"title": "Dairy Delights", "subtitle": "Farm fresh milk delivered daily", "image_name": "milk.jpg", "category": "Dairy"},
+            {"title": "Snack Time!", "subtitle": "Buy 1 Get 1 Free on snacks", "image_name": "chips.jpg", "category": "Snacks"},
+            {"title": "Bakery Bonanza", "subtitle": "Freshly baked cakes and breads", "image_name": "cake.jpg", "category": "Bakery"},
+        ]
+        
+        for item in offers_data:
+            category, _ = Category.objects.get_or_create(name=item["category"])
+            offer = Offer(
+                title=item["title"],
+                subtitle=item["subtitle"],
+                category=category,
+                is_active=True
+            )
+            
+            img_path = os.path.join(settings.BASE_DIR, 'static', 'images', item["image_name"])
+            if os.path.exists(img_path):
+                with open(img_path, 'rb') as f:
+                    offer.image.save(item["image_name"], File(f), save=False)
+                    
+            offer.save()
 
 
 # ======================================================
