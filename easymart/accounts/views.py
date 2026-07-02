@@ -246,6 +246,7 @@ def api_login(request):
 # =========================================================
 # OTP LOGIN
 
+@csrf_exempt
 @require_POST
 def otp_login(request):
 
@@ -370,6 +371,7 @@ Do not share this OTP with anyone.
 # VERIFY OTP
 # =========================================================
 
+@csrf_exempt
 @require_POST
 def verify_otp(request):
 
@@ -441,6 +443,7 @@ def reset_password_page(request, uidb64, token):
 # RESET PASSWORD API
 # =========================================================
 
+@csrf_exempt
 @require_POST
 def reset_password_api(request):
 
